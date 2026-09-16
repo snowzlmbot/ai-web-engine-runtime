@@ -23,9 +23,11 @@ An offline universal self-decrypting command file necessarily contains enough ob
 
 ## Two supported runtimes
 
-### Standard APK
+### Standard APK (paused)
 
-`ai-web-engine.apk` is a normal Android APK that users can install directly. It is release-signed, R8-full-mode obfuscated, resource-shrunk, and stores internal runtime metadata as an AES-256-GCM authenticated encrypted asset. Android source, R8 mapping and signing material remain private.
+APK development and publication are paused. The last normal installable APK is in [v1.3.3](https://github.com/snowzlmbot/ai-web-engine-runtime/releases/tag/v1.3.3). Newer `releaseType=shell` releases **do not contain an APK**; do not use their command binaries as APKs.
+
+The v1.3.3 APK is release-signed, R8-full-mode obfuscated, resource-shrunk, and stores internal runtime metadata as an AES-256-GCM authenticated encrypted asset. Android source, R8 mapping and signing material remain private.
 
 ### One-click command
 
