@@ -1,0 +1,6 @@
+.DS_Store
+.env
+.env.*
+PROJECT_STATE.json
+PROJECT_STATUS.md
+.project-continuity/

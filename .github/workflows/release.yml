@@ -1,0 +1,130 @@
+name: Verify and publish encrypted runtime
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'runtime-assets/**'
+      - 'version.json'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect complete encrypted release payload
+        id: readiness
+        run: |
+          set -eu
+          if [ ! -s version.json ] || [ ! -s runtime-assets/release.txt ] || [ ! -s runtime-assets/SHA256SUMS ]; then
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Repository initialized without a release payload.'
+            exit 0
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
+      - name: Enforce source-free public tree
+        run: |
+          set -eu
+          ! git ls-files | grep -E '(^|/)(cmd|internal|android-app|scripts|skills|web)/'
+          ! git ls-files | grep -E '\.(go|kt|java|c|cc|cpp|h|hpp|sh|apk|jks|keystore)$'
+          ! git ls-files | grep -E '(^|/)(PROJECT_STATE\.json|PROJECT_STATUS\.md|runtime\.key|key_release_generated\.go)$'
+      - name: Verify encrypted runtime bytes, ABIs, manifests and hashes
+        if: steps.readiness.outputs.ready == 'true'
+        run: |
+          set -eu
+          version=$(python3 -c 'import json; print(json.load(open("version.json"))["version"])')
+          test "$(python3 -c 'import json; print(json.load(open("runtime-assets/version.json"))["version"])')" = "$version"
+          test "$(tr -d '\r\n' < runtime-assets/release.txt)" = "v$version"
+          (cd runtime-assets && sha256sum -c SHA256SUMS)
+          test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-android-*' -type f | wc -l)" -eq 4
+          test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-script-*' -type f | wc -l)" -eq 16
+          test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-apk-installer-*' -type f | wc -l)" -eq 4
+          for spec in \
+            'android-arm64|ELF64|AArch64' \
+            'android-armv7|ELF32|ARM' \
+            'android-x86_64|ELF64|X86-64' \
+            'android-x86|ELF32|Intel 80386'; do
+            IFS='|' read -r suffix elf_class elf_machine <<<"$spec"
+            for file in \
+              "runtime-assets/ai-web-engine-$suffix" \
+              "runtime-assets/ai-web-engine-apk-installer-$suffix" \
+              "runtime-assets/ai-web-engine-script-init-$suffix" \
+              "runtime-assets/ai-web-engine-script-start-$suffix" \
+              "runtime-assets/ai-web-engine-script-stop-$suffix" \
+              "runtime-assets/ai-web-engine-script-rollback-$suffix"; do
+              test -s "$file"
+              readelf -h "$file" | grep -F 'Class:' | grep -F "$elf_class" >/dev/null
+              readelf -h "$file" | grep -F 'Machine:' | grep -F "$elf_machine" >/dev/null
+              test "$(tail -c 76 "$file" | head -c 8)" = 'AWEENC03'
+              ! grep -aF '#!/system/bin/sh' "$file"
+            done
+            manifest="runtime-assets/manifest-$suffix.json"
+            signature="runtime-assets/manifest-$suffix.sig"
+            public_key="runtime-assets/manifest-$suffix.pub"
+            test -s "$manifest" && test -s "$signature" && test -s "$public_key"
+            base64 -d < "$public_key" > "$RUNNER_TEMP/public.raw"
+            test "$(wc -c < "$RUNNER_TEMP/public.raw")" -eq 32
+            printf '302a300506032b6570032100' | xxd -r -p > "$RUNNER_TEMP/public.der"
+            cat "$RUNNER_TEMP/public.raw" >> "$RUNNER_TEMP/public.der"
+            openssl pkey -pubin -inform DER -in "$RUNNER_TEMP/public.der" -out "$RUNNER_TEMP/public.pem" >/dev/null
+            base64 -d < "$signature" > "$RUNNER_TEMP/signature.bin"
+            openssl pkeyutl -verify -pubin -inkey "$RUNNER_TEMP/public.pem" -rawin -in "$manifest" -sigfile "$RUNNER_TEMP/signature.bin"
+            python3 - "$manifest" "$suffix" <<'PY'
+          import hashlib,json,pathlib,sys
+          manifest=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          suffix=sys.argv[2]
+          mapping={
+            'init.sh':f'ai-web-engine-script-init-{suffix}',
+            'start.sh':f'ai-web-engine-script-start-{suffix}',
+            'stop.sh':f'ai-web-engine-script-stop-{suffix}',
+            'rollback.sh':f'ai-web-engine-script-rollback-{suffix}',
+          }
+          assert manifest['format']==1
+          for local_name,asset_name in mapping.items():
+            digest=hashlib.sha256((pathlib.Path('runtime-assets')/asset_name).read_bytes()).hexdigest()
+            assert manifest['scripts'][local_name]==digest,(local_name,digest,manifest['scripts'].get(local_name))
+          PY
+          done
+          echo "verified source-free encrypted runtime v$version"
+      - name: Create or update public Release
+        if: steps.readiness.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          version=$(python3 -c 'import json; print(json.load(open("version.json"))["version"])')
+          tag="v$version"
+          mapfile -t assets < <(find runtime-assets -maxdepth 1 -type f ! -name release.txt -printf '%p\n' | LC_ALL=C sort)
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber "${assets[@]}"
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "AI Web Engine encrypted runtime $tag" --notes-file runtime-assets/release-notes.md "${assets[@]}"
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '{tag_name,assets:[.assets[].name]}'
+      - name: Keep only two newest formal public Releases
+        if: steps.readiness.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName,isDraft,isPrerelease --jq '.[] | select(.isDraft == false and .isPrerelease == false) | .tagName' | sort -V -r > "$RUNNER_TEMP/releases"
+          count=0
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            count=$((count + 1))
+            if [ "$count" -gt 2 ]; then gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes; fi
+          done < "$RUNNER_TEMP/releases"
+      - name: Trigger changelog synchronization when configured
+        if: steps.readiness.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CHANGELOG_REPO_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "${GH_TOKEN:-}" ]; then echo 'CHANGELOG_REPO_TOKEN not configured; scheduled changelog sync remains active.'; exit 0; fi
+          version=$(python3 -c 'import json; print(json.load(open("version.json"))["version"])')
+          gh api repos/snowzlmbot/ai-web-engine-changelog/dispatches --method POST -f event_type=ai-web-engine-release -f "client_payload[release_tag]=v$version"
