@@ -1,10 +1,10 @@
 {
   "format": 1,
-  "version": "1.3.0",
+  "version": "1.3.1",
   "scripts": {
-    "init.sh": "6d24837cc8c1ea332c7ddb06fbe73398d8715c2e612b62940eaee9cfb72dd5af",
-    "rollback.sh": "78a900529bf526cd5c6140e009276ac679c8916c180cd51c6a1899a6ad8ce0bb",
-    "start.sh": "ea5b7cf2eca76d2ec43b689cd1c77d3dade4cd3fd291c485628aa317f03f9ccc",
-    "stop.sh": "7191b88e69ed5f25a54141b3121e69bfb1489b48295a9d3d1c5bfe01c8f380af"
+    "init.sh": "7fc60861bf65761dc36bedd8bb4b7dadffb6c80a224b32f4602eacb4f16feb85",
+    "rollback.sh": "2a0b33ece07c3df924da132c50e57662faea904e3d92e6a1e49c7962b9d204eb",
+    "start.sh": "31b1c651d43de96128de3670ed867202c2fdb3a0b772ed0afa62e385a7eb77c8",
+    "stop.sh": "759ac846c6d933458fef72f669af7da2ab7b23c1117711b07568d890368ba8a3"
   }
 }
