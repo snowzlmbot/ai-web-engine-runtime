@@ -21,4 +21,15 @@ Each downloadable runtime executable is an ABI-specific ELF loader with an appen
 
 An offline universal self-decrypting file necessarily contains enough obfuscated material to recover its release key at runtime; this raises the reverse-engineering cost but cannot prevent extraction by a sufficiently privileged debugger on a rooted device. Ed25519 signatures and SHA-256 provide authenticity and tamper detection independently of the encryption layer.
 
+## Encrypted APK distribution
+
+The public Release does **not** expose a plaintext `.apk`. The signed, R8-obfuscated APK is the AES-256-GCM payload inside four directly executable ABI-specific installers:
+
+- `ai-web-engine-apk-installer-android-arm64`
+- `ai-web-engine-apk-installer-android-armv7`
+- `ai-web-engine-apk-installer-android-x86_64`
+- `ai-web-engine-apk-installer-android-x86`
+
+Run the installer matching the Android device ABI as root. It authenticates and decrypts the APK into a private temporary path, invokes `pm install -r`, and removes the temporary plaintext after exit. The plaintext signed APK remains only in the private full Release archive.
+
 Public changelog: <https://snowzlmbot.github.io/ai-web-engine-changelog/>
