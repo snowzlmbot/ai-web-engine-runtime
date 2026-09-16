@@ -1,4 +1,4 @@
-# AI Web Engine v1.3.1
+# AI Web Engine v1.3.2
 
 Public distribution contains two normal user-facing runtimes:
 
