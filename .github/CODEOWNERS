@@ -1,0 +1,8 @@
+# Public runtime changes require an owner review.
+* @snowzlm @snowzlmbot
+
+/.github/ @snowzlm @snowzlmbot
+/runtime-assets/ @snowzlm @snowzlmbot
+/version.json @snowzlm @snowzlmbot
+/README.md @snowzlm @snowzlmbot
+/LICENSE @snowzlm @snowzlmbot
