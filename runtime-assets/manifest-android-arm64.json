@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "version": "1.3.0",
+  "scripts": {
+    "init.sh": "7773082b98f06b32c8ef8a66ecaef140c061751a4a377f5085a85f4077056259",
+    "rollback.sh": "702964eaffa042b8966df325ad5d8f15e33081bc85b3e52d0537b83c29515917",
+    "start.sh": "47142e357aa69d342e4a248899cd9b149a117c39369e689d096ef8a8bc19b2ec",
+    "stop.sh": "2ee75922585722951e47679e26c8556afdfde84d8f868cf913f00ad98272ca8d"
+  }
+}
