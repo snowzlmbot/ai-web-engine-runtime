@@ -1,8 +1,8 @@
-# Public runtime changes require an owner review.
-* @snowzlm @snowzlmbot
+# Public runtime publication paths are owned by snowzlmbot.
+* @snowzlmbot
 
-/.github/ @snowzlm @snowzlmbot
-/runtime-assets/ @snowzlm @snowzlmbot
-/version.json @snowzlm @snowzlmbot
-/README.md @snowzlm @snowzlmbot
-/LICENSE @snowzlm @snowzlmbot
+/.github/ @snowzlmbot
+/runtime-assets/ @snowzlmbot
+/version.json @snowzlmbot
+/README.md @snowzlmbot
+/LICENSE @snowzlmbot
