@@ -58,11 +58,21 @@ jobs:
           test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-android-*' -type f | wc -l)" -eq 4
           test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-script-*' -type f | wc -l)" -eq 16
           test "$(find runtime-assets -maxdepth 1 -name 'ai-web-engine-apk-installer-*' -type f | wc -l)" -eq 0
-          test -s runtime-assets/ai-web-engine.apk
-          unzip -t runtime-assets/ai-web-engine.apk >/dev/null
-          apksigner=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner | sort -V | tail -n 1)
-          test -x "$apksigner"
-          "$apksigner" verify --verbose runtime-assets/ai-web-engine.apk
+          release_type=$(python3 -c 'import json; print(json.load(open("runtime-assets/version.json")).get("releaseType", "full"))')
+          case "$release_type" in
+            shell)
+              test ! -e runtime-assets/ai-web-engine.apk
+              test "$(git ls-files '*.apk')" = ''
+              ;;
+            full)
+              test -s runtime-assets/ai-web-engine.apk
+              unzip -t runtime-assets/ai-web-engine.apk >/dev/null
+              apksigner=$(find "${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools" -type f -name apksigner | sort -V | tail -n 1)
+              test -x "$apksigner"
+              "$apksigner" verify --verbose runtime-assets/ai-web-engine.apk
+              ;;
+            *) echo "unsupported release type: $release_type" >&2; exit 1 ;;
+          esac
           for spec in \
             'android-arm64|ELF64|AArch64' \
             'android-armv7|ELF32|ARM' \
