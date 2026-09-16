@@ -73,7 +73,15 @@ jobs:
             cat "$RUNNER_TEMP/public.raw" >> "$RUNNER_TEMP/public.der"
             openssl pkey -pubin -inform DER -in "$RUNNER_TEMP/public.der" -out "$RUNNER_TEMP/public.pem" >/dev/null
             base64 -d < "$signature" > "$RUNNER_TEMP/signature.bin"
-            openssl pkeyutl -verify -pubin -inkey "$RUNNER_TEMP/public.pem" -rawin -in "$manifest" -sigfile "$RUNNER_TEMP/signature.bin"
+            python3 - "$manifest" "$RUNNER_TEMP/manifest.canonical" <<'PY'
+          import json,pathlib,sys
+          manifest=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          lines=[f"format={manifest['format']}", f"version={manifest['version']}"]
+          for name in sorted(manifest['scripts']):
+              lines.append(f"script={name} sha256={manifest['scripts'][name].lower()}")
+          pathlib.Path(sys.argv[2]).write_text("\n".join(lines)+"\n")
+          PY
+            openssl pkeyutl -verify -pubin -inkey "$RUNNER_TEMP/public.pem" -rawin -in "$RUNNER_TEMP/manifest.canonical" -sigfile "$RUNNER_TEMP/signature.bin"
             python3 - "$manifest" "$suffix" <<'PY'
           import hashlib,json,pathlib,sys
           manifest=json.loads(pathlib.Path(sys.argv[1]).read_text())
