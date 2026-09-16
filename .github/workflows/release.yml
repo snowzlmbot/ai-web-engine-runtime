@@ -7,12 +7,14 @@ on:
       - 'runtime-assets/**'
       - 'version.json'
       - '.github/workflows/release.yml'
+      - '.github/CODEOWNERS'
   pull_request:
     branches: [main]
     paths:
       - 'runtime-assets/**'
       - 'version.json'
       - '.github/workflows/release.yml'
+      - '.github/CODEOWNERS'
   workflow_dispatch:
 
 permissions:
