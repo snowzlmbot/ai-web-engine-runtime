@@ -1,8 +1,5 @@
-# AI Web Engine v1.3.3
+# AI Web Engine v1.3.4 — one-click Shell runtime
 
-Public distribution contains two normal user-facing runtimes:
+This release updates only the signed one-click command runtime (four ABI engines and encrypted init/start/stop/rollback containers). **No new APK is built or published.** The last APK release remains v1.3.3: https://github.com/snowzlmbot/ai-web-engine-runtime/releases/tag/v1.3.3
 
-1. ai-web-engine.apk is a standard directly installable Android APK, signed, R8-obfuscated, resource-shrunk, and built with encrypted internal runtime metadata.
-2. The ABI-specific one-click command assets are AES-256-GCM authenticated self-decrypting ELF executables. Their command payloads use non-Garble builds for compatibility; the loader is Garble-obfuscated.
-
-The public repository contains no source code, plaintext command payloads, release keys, signing private keys, or project state.
+Startup checks only the remote version when there is no update. Invalid local script bundles are repaired through a checksum-checked full initialization; existing configuration, provider keys, sessions, skills and logs are preserved.
