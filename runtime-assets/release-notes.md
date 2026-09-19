@@ -1,4 +1,4 @@
-# AI Web Engine v1.3.8 — one-click Shell runtime
+# AI Web Engine v1.3.9 — one-click Shell runtime
 
 This release updates only the signed one-click command runtime (four ABI engines and encrypted init/start/stop/rollback containers). **APK development and publication remain paused. No APK is built or published in this release.**
 
@@ -7,6 +7,8 @@ This release updates only the signed one-click command runtime (four ABI engines
 - ShortX canonicalization preserves large integers and high-precision decimals and rejects trailing JSON data.
 - One-click bootstrap and update now retry jsDelivr fallbacks when GitHub/raw DNS is unavailable, suppress curl noise, and report the network/DNS cause clearly.
 - CDN fallbacks use the immutable release tag rather than cached  content, so a fallback cannot silently return an older runtime.
+- New sessions inherit the selected global default provider and its default model; existing sessions keep their explicit provider/model choices.
+- CRLF-compatible SSE parsing and shorter retry backoff reduce false stream interruptions and recovery wait time.
 - Existing unreadable-history isolation, per-provider keys and per-session provider selection remain intact. Original ciphertext, the master key and existing configuration are preserved.
 
 Startup checks only the remote version when there is no update. Invalid local script bundles are repaired through a checksum-checked full initialization; existing configuration, provider keys, sessions, skills and logs are preserved.
